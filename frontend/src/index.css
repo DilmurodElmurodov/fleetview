@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .glass {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.35)];
+  }
+  .glass-strong {
+    @apply bg-[#0d1524]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)];
+  }
+  .input-glass {
+    @apply w-full rounded-xl border border-white/10 bg-[#0a0f1c]/80 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:border-sky-400/50;
+  }
+  .glass-neon {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-emerald-500/30 rounded-2xl;
+    box-shadow:
+      0 0 24px rgba(16, 185, 129, 0.08),
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .glass-neon-sky {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-sky-500/30 rounded-2xl;
+    box-shadow:
+      0 0 24px rgba(14, 165, 233, 0.1),
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .btn-glow {
+    background: linear-gradient(120deg, #0ea5e9, #059669, #7c3aed, #0ea5e9);
+    background-size: 300% 100%;
+    animation: glow-shift 8s linear infinite;
+    box-shadow: 0 0 32px rgba(14, 165, 233, 0.35);
+  }
+}
+
+@keyframes glow-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-glow {
+    animation: none;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #0a0f1c;
+  color: #e2e8f0;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.maplibregl-canvas {
+  outline: none;
+}
+.maplibregl-ctrl-attrib {
+  background: rgba(10, 15, 28, 0.6) !important;
+  color: #64748b !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: #64748b !important;
+}
