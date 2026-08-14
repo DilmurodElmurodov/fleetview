@@ -1,5 +1,6 @@
 # FleetView — B2B Logistics & Fleet Telematics Platform
 
+[![CI](https://github.com/DilmurodElmurodov/fleetview/actions/workflows/ci.yml/badge.svg)](https://github.com/DilmurodElmurodov/fleetview/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-17-orange?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?logo=springboot&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
@@ -169,6 +170,22 @@ Validation failures return `VALIDATION_FAILED` with per-field errors. WebSocket 
 - **Draw geofence zone** — click the button, click vertices on the map, double-click to finish, name it, pick Restricted/Delivery/Warehouse. Trucks crossing it alert within one tick. `Esc` cancels.
 - **Replay** — pick a truck in the bottom player: its recent route draws in violet and an animated marker replays it at 1×/2×/5×, with a scrubber.
 - **Simulator controls** — Start/Stop the whole fleet, or time-warp physics 1×–5×.
+
+## 🧪 Testing
+
+```bash
+./gradlew test        # requires a running Docker daemon
+```
+
+The integration suite runs against a **real PostGIS 16 instance via Testcontainers** — no mocks, no H2. Flyway migrates the throwaway database, and the tests exercise the production code paths:
+
+| Suite | What it proves |
+|---|---|
+| `GeofenceEngineIntegrationTest` | Zone create/toggle/delete propagates to the prepared-geometry cache **after commit**; entering a restricted zone raises exactly one `CRITICAL` breach alert (transition latching); exit alerts fire; deactivated zones go silent; the `ST_Contains` spatial query and automatic ring-closing behave correctly; invalid geometry and missing zones are rejected |
+| `TelemetryIngestionIntegrationTest` | The `ON CONFLICT` UPSERT keeps exactly one live-state row per vehicle while history appends; route history returns chronologically ordered, plate-enriched frames; **200 concurrent upserts across 8 threads** against one vehicle end with a single consistent row and zero failures |
+| `B2BLogisticsApplicationTests` | Full context boot against the migrated PostGIS schema |
+
+CI runs the suite plus a strict-TypeScript frontend build on every push and pull request.
 
 ## ⚙️ Configuration
 
