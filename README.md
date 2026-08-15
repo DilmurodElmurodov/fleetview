@@ -214,3 +214,4 @@ CI runs the suite plus a strict-TypeScript frontend build on every push and pull
 ├── frontend/Dockerfile+nginx.conf     # static build + /api,/ws reverse proxy
 └── docker-compose.yml # postgis + backend + frontend
 ```
+
