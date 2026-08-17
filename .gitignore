@@ -16,6 +16,9 @@ frontend/node_modules/
 .env
 frontend/.env
 
+# Local AI assistant workspace config (not part of the published project)
+CLAUDE.md
+
 # OS
 .DS_Store
 
