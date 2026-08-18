@@ -10,6 +10,7 @@ import org.example.b2blogistics.exception.InvalidZoneGeometryException;
 import org.example.b2blogistics.exception.ResourceNotFoundException;
 import org.example.b2blogistics.mapper.GeofenceZoneMapper;
 import org.example.b2blogistics.repository.GeofenceZoneRepository;
+import org.locationtech.jts.geom.Polygon;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,12 +38,12 @@ public class GeofenceZoneService {
 
     @Transactional
     public GeofenceZoneDto createZone(CreateZoneRequest request) {
-        validateRing(request.coordinates());
+        Polygon area = buildValidatedPolygon(request.coordinates());
         GeofenceZone zone = GeofenceZone.builder()
                 .name(request.name())
                 .zoneType(request.zoneType())
                 .color(request.color() != null ? request.color() : defaultColorFor(request.zoneType()))
-                .area(GeoMath.closedPolygonOf(request.coordinates()))
+                .area(area)
                 .active(true)
                 .build();
         GeofenceZoneDto dto = GeofenceZoneMapper.toDto(zoneRepository.save(zone));
@@ -68,9 +69,9 @@ public class GeofenceZoneService {
         eventPublisher.publishEvent(new GeofenceZonesChangedEvent());
     }
 
-    private void validateRing(double[][] ring) {
+    private Polygon buildValidatedPolygon(double[][] ring) {
         for (double[] vertex : ring) {
-            if (vertex.length != 2) {
+            if (vertex == null || vertex.length != 2) {
                 throw new InvalidZoneGeometryException("Each vertex must be a [longitude, latitude] pair");
             }
             if (vertex[0] < -180 || vertex[0] > 180 || vertex[1] < -90 || vertex[1] > 90) {
@@ -78,6 +79,16 @@ public class GeofenceZoneService {
                         "Vertex out of WGS84 bounds: [%s, %s]".formatted(vertex[0], vertex[1]));
             }
         }
+        Polygon polygon;
+        try {
+            polygon = GeoMath.closedPolygonOf(ring);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidZoneGeometryException("Coordinates do not form a polygon ring: " + e.getMessage());
+        }
+        if (!polygon.isValid()) {
+            throw new InvalidZoneGeometryException("Polygon ring is degenerate or self-intersecting");
+        }
+        return polygon;
     }
 
     private static String defaultColorFor(ZoneType type) {

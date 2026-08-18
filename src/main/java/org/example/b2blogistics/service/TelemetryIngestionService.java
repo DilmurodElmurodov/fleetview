@@ -8,6 +8,8 @@ import org.example.b2blogistics.repository.TelemetryRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -27,8 +29,13 @@ public class TelemetryIngestionService {
             telemetryRepository.upsertLiveState(
                     frame.vehicleId(), frame.lon(), frame.lat(),
                     frame.speedKph(), frame.bearingDeg(), frame.fuelLevelPct());
-            liveTelemetryCache.put(frame);
         }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                frames.forEach(liveTelemetryCache::put);
+            }
+        });
     }
 
     public void broadcastLiveTelemetry(List<TelemetrySnapshot> frames) {

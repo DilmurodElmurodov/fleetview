@@ -50,7 +50,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ApiResponse<Void>> handleMalformedRequest(Exception ex) {
-        return respond(HttpStatus.BAD_REQUEST, ErrorDetails.of("MALFORMED_REQUEST", ex.getMessage()));
+        log.debug("Malformed request rejected", ex);
+        return respond(HttpStatus.BAD_REQUEST,
+                ErrorDetails.of("MALFORMED_REQUEST", "Request could not be parsed"));
     }
 
     @ExceptionHandler(Exception.class)

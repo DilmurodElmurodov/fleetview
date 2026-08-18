@@ -6,6 +6,7 @@ import org.example.b2blogistics.service.TelemetryIngestionService;
 import org.example.b2blogistics.service.TelemetryQueryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Instant;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TelemetryIngestionIntegrationTest extends AbstractIntegrationTest {
 
@@ -121,6 +123,37 @@ class TelemetryIngestionIntegrationTest extends AbstractIntegrationTest {
         Integer historyCount = jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM telemetry_data WHERE vehicle_id = ?", Integer.class, vehicleId);
         assertThat(historyCount).isEqualTo(threads * iterationsPerThread);
+    }
+
+    @Test
+    void failedBatchIsFullyAtomicAndNeverPollutesLiveCache() {
+        long validVehicleId = 13L;
+        long ghostVehicleId = 987_654L;
+
+        assertThatThrownBy(() -> ingestionService.recordTelemetryBatch(List.of(
+                frame(validVehicleId, 69.0, 41.0, 50.0, Instant.now()),
+                frame(ghostVehicleId, 69.1, 41.1, 60.0, Instant.now()))))
+                .isInstanceOf(DataAccessException.class);
+
+        assertThat(liveTelemetryCache.get(validVehicleId)).isEmpty();
+        assertThat(liveTelemetryCache.get(ghostVehicleId)).isEmpty();
+        assertThat(liveStateRowCount(validVehicleId)).isZero();
+        Integer historyCount = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM telemetry_data WHERE vehicle_id = ?", Integer.class, validVehicleId);
+        assertThat(historyCount).isZero();
+    }
+
+    @Test
+    void committedBatchPopulatesLiveCacheAfterCommit() {
+        long vehicleId = 14L;
+        ingestionService.recordTelemetryBatch(List.of(
+                frame(vehicleId, 68.5, 40.5, 66.0, Instant.now())));
+
+        assertThat(liveTelemetryCache.get(vehicleId))
+                .hasValueSatisfying(cached -> {
+                    assertThat(cached.lon()).isEqualTo(68.5);
+                    assertThat(cached.speedKph()).isEqualTo(66.0);
+                });
     }
 
     private int liveStateRowCount(long vehicleId) {

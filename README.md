@@ -193,7 +193,7 @@ CI runs the suite plus a strict-TypeScript frontend build on every push and pull
 |---|---|---|
 | `SERVER_PORT` | `8080` | Backend HTTP port |
 | `DB_HOST` / `DB_PORT` / `DB_NAME` | `localhost` / `5435` / `fleet_telematics` | Datasource |
-| `DB_USER` / `DB_PASSWORD` | `fleet` / `fleet_secret` | Credentials |
+| `DB_USER` / `DB_PASSWORD` | `fleet` / `fleet_local_dev` | Credentials (local dev defaults — override outside local) |
 | `WS_ALLOWED_ORIGINS` | localhost 5173/3000/8080 | CORS + WebSocket origins |
 | `fleet.simulator.*` (yml) | 2000 ms tick, 90 km/h, 12 % fuel | Simulator tuning |
 | `VITE_API_URL` (frontend) | `http://localhost:8085` | Backend origin; empty ⇒ same-origin (nginx proxy) |

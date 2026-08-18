@@ -130,6 +130,29 @@ class GeofenceEngineIntegrationTest extends AbstractIntegrationTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
+    @Test
+    void nullVertexIsRejectedWithoutServerError() {
+        assertThatThrownBy(() -> zoneService.createZone(new CreateZoneRequest(
+                "Null Vertex Zone", ZoneType.DELIVERY, null,
+                new double[][]{{10.0, 10.0}, null, {11.0, 11.0}})))
+                .isInstanceOf(InvalidZoneGeometryException.class)
+                .hasMessageContaining("[longitude, latitude]");
+    }
+
+    @Test
+    void selfIntersectingRingIsRejected() {
+        assertThatThrownBy(() -> zoneService.createZone(new CreateZoneRequest(
+                "Bow Tie Zone", ZoneType.DELIVERY, null,
+                new double[][]{{0.0, 0.0}, {1.0, 1.0}, {1.0, 0.0}, {0.0, 1.0}})))
+                .isInstanceOf(InvalidZoneGeometryException.class)
+                .hasMessageContaining("self-intersecting");
+
+        assertThatThrownBy(() -> zoneService.createZone(new CreateZoneRequest(
+                "Degenerate Zone", ZoneType.DELIVERY, null,
+                new double[][]{{5.0, 5.0}, {5.0, 5.0}, {5.0, 5.0}})))
+                .isInstanceOf(InvalidZoneGeometryException.class);
+    }
+
     private GeofenceZoneDto createRemoteZone(String name, ZoneType type) {
         GeofenceZoneDto zone = zoneService.createZone(
                 new CreateZoneRequest(name, type, null, REMOTE_SQUARE));
